@@ -1,0 +1,82 @@
+services:
+  # ----------------------------------------------------------------------------
+  # PostgreSQL Database Service
+  # ----------------------------------------------------------------------------
+  postgres:
+    image: postgres:16-alpine
+    container_name: olgax-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-olgax_hr}
+      POSTGRES_USER: ${POSTGRES_USER:-olgax_user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-olgax_password}
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-olgax_user} -d ${POSTGRES_DB:-olgax_hr}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    networks:
+      - olgax-network
+
+  # ----------------------------------------------------------------------------
+  # Spring Boot Backend Service (hr-system)
+  # ----------------------------------------------------------------------------
+  backend:
+    build:
+      context: ./hr-system
+      dockerfile: Dockerfile
+    container_name: olgax-backend
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB:-olgax_hr}
+      SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER:-olgax_user}
+      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD:-olgax_password}
+      SPRING_JPA_HIBERNATE_DDL_AUTO: update
+      SPRING_JPA_SHOW_SQL: "true"
+      SERVER_PORT: 8080
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - olgax-network
+
+  # ----------------------------------------------------------------------------
+  # React Frontend Service (hr-frontend)
+  # ----------------------------------------------------------------------------
+  frontend:
+    build:
+      context: ./hr-frontend
+      dockerfile: Dockerfile
+    container_name: olgax-frontend
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      NODE_ENV: production
+      PORT: 3000
+      NEXT_PUBLIC_API_URL: http://localhost:8080
+      VITE_API_URL: http://localhost:8080
+    depends_on:
+      backend:
+        condition: service_started
+    networks:
+      - olgax-network
+
+# ------------------------------------------------------------------------------
+# Persistent Volumes & Networks
+# ------------------------------------------------------------------------------
+volumes:
+  postgres_data:
+    name: olgax_postgres_data
+
+networks:
+  olgax-network:
+    name: olgax_network
+    driver: bridge

@@ -1,9 +1,6 @@
 import type { Metadata } from "next";
-import { Inter } from "next/font/google";
 import "./globals.css";
 import Link from "next/link";
-
-const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
   title: "OLGAX HR System",
@@ -17,7 +14,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className={`${inter.className} bg-slate-50 min-h-screen flex`}>
+      <body className="font-sans antialiased bg-slate-50 min-h-screen flex">
         {/* Sidebar Navigation */}
         <aside className="w-64 bg-slate-900 text-slate-300 flex flex-col justify-between hidden md:flex border-r border-slate-800">
           <div>
@@ -41,6 +38,12 @@ export default function RootLayout({
                 className="flex items-center px-4 py-2.5 rounded-lg text-sm font-medium hover:bg-slate-800 hover:text-white transition-colors"
               >
                 Departments
+              </Link>
+              <Link
+                href="/payroll"
+                className="flex items-center px-4 py-2.5 rounded-lg text-sm font-medium hover:bg-slate-800 hover:text-white transition-colors"
+              >
+                Payroll
               </Link>
             </nav>
           </div>
